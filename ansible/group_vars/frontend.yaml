@@ -1,0 +1,4 @@
+frontend_version: 1.0.390050
+frontend_user: www-data
+frontend_lib_directory: /opt/sausage-store/frontend/lib
+NODEJS_VERSION: "16"

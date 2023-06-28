@@ -1,0 +1,21 @@
+- name: Ждун
+  hosts: all
+  gather_facts: no
+  tasks:
+  - name: Ждун ждёт и вы подождите
+    ansible.builtin.wait_for_connection:
+      timeout: 900
+
+- name: Один плей для запуска backend сервиса сосисочной
+  # Шаблон целевых хостов это группа хостов с именем backend
+  hosts: backend
+  # Список ansible-ролей для backend-серверов
+  roles:
+    - backend
+
+- name: Второй плей для запуска frontend сервиса сосисочной
+  # Шаблон целевых хостов это группа хостов с именем frontend
+  hosts: frontend
+  # Список ansible-ролей для frontend-серверов
+  roles:
+    - frontend

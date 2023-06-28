@@ -1,0 +1,4 @@
+ansible_connection: ssh
+nexus_user: std-012-042
+nexus_pass: "{{ vault_nexus_pass }}"
+nexus_repo: "https://nexus.praktikum-services.ru/repository"

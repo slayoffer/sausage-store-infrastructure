@@ -1,0 +1,40 @@
+---
+groups:
+  - name: Sausage store rules
+    rules:
+    - alert: InstanceDown
+      expr: up{app="backend"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        project: "sausage_store"
+        component: "Backend"
+      annotations:
+        description: '{{ $labels.instance }}  has been down for more than 1 minute.'
+        summary: 'Instance {{ $labels.instance }} with pod name {{ $labels.kubernetes_pod_name}} down'
+    - alert: POST Orders 100+ms
+      expr: histogram_quantile(0.95, sum by(le) (rate(http_server_requests_seconds_bucket{method="POST", uri="/api/orders"}[5m]))) >= 0.1
+      labels:
+        severity: warning
+        project: "sausage_store"
+        component: "backend"
+      annotations:
+        description: '95 quantile of requests to /api/orders for 5 minutes longer than 100ms'
+        summary: '{{ $labels.project }}{{ $labels.component }} too slow'
+    - alert: Status 500
+      expr: rate (http_server_requests_seconds_count{status="500"}[10m]) > 0
+      labels:
+        severity: critical
+        project: "sausage_store"
+      annotations:
+        description: '{{ $labels.uri }} send code 500'
+        summary: 'Alarm {{ $labels.uri }} is dead, help me someone!!!'
+    - alert: Prometheus Actuator error
+      expr: rate (http_server_requests_seconds_count{status=~"5..|4..",uri="/actuator/prometheus"}[2m]) > 0
+      labels:
+        severity: warning
+        project: "sausage_store"
+        component: "prometheus"
+      annotations:
+        description: '{{ $labels.uri }} send code {{ $labels.status }}'
+        summary: '{{ $labels.uri }} may be not ok, we need to check'

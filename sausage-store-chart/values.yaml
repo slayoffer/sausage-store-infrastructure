@@ -1,0 +1,65 @@
+backend:
+  image: gitlab.praktikum-services.ru:5050/std-012-042/sausage-store/sausage-backend
+  tag: "latest"
+  imagePullPolicy: Always
+  replicas: 3
+  rollingUpdate:
+    maxUnavailable: 2
+    maxSurge: 20% 
+  containerPort: 8080
+  # Необходимо передать
+  # vault_token: 
+  environment: production
+  resources:
+    requests:
+      memory: "300Mi"
+      cpu: "200m"
+    limits:
+      memory: "400Mi"
+      cpu: "300m"
+  annotations:
+    prometheusPath: /actuator/prometheus
+    prometheusPort: "8080"
+    prometheusScrape: "true" 
+
+frontend:
+  image: gitlab.praktikum-services.ru:5050/std-012-042/sausage-store/sausage-frontend
+  tag: "latest"
+  imagePullPolicy: Always
+  # domain name for ingress frontend
+  fqdn: shubin-ivan-12.k8s.praktikum-services.tech
+  replicas: 1
+  environment: production
+  containerPort: 8080
+  # out port for ingress frontend
+  ingressPort: 80
+  resources:
+    requests:
+      memory: "64Mi"
+      cpu: "100m"
+    limits:
+      memory: "128Mi"
+      cpu: "200m"
+
+backend-report:
+  image: gitlab.praktikum-services.ru:5050/std-012-042/sausage-store/sausage-backend-report
+  tag: "latest"
+  imagePullPolicy: Always
+  # Переменная для секрета монгодб Необходимо передать
+  dburi: 
+  environment: production
+  containerPort: 8080
+  minReplicas: 1
+  maxReplicas: 5
+  averageUtilization: 75
+  resources:
+    requests:
+      cpu: "250m"
+    limits:
+      cpu: "500m"
+
+global:
+  backServiceName: backend-service
+  backServicePort: 8080
+  # Токен для подключения к репозиторию с образами Необходимо передать
+  dockerconfigjson: 

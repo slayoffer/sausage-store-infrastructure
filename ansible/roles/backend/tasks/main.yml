@@ -1,0 +1,73 @@
+---
+# tasks file for backend
+#- name: Install PIP
+#  ansible.builtin.apt:
+#    name: python3-pip
+#    state: present
+#    update_cache: yes
+
+#- name: Install lxml
+#  ansible.builtin.pip:
+#    name: lxml
+
+- name: Добавим сервисного пользователя
+  ansible.builtin.user:
+    name: "{{ backend_user }}"
+    create_home: no
+    shell: /sbin/nologin
+
+- name: Создадим папочку для репортов
+  ansible.builtin.file:
+    path: "{{ backend_report_directory }}"
+    state: directory
+    owner: "{{ backend_user }}"
+    group: "{{ backend_user }}"
+
+- name: Сделаем папочку для джарника
+  ansible.builtin.file:
+    path: "{{ backend_lib_directory }}"
+    state: directory
+    owner: "{{ backend_user }}"
+    group: "{{ backend_user }}"
+
+#- name: Используем модуль maven_artifact, он скачает пакет приложения с Nexus
+#  community.general.maven_artifact:
+#    dest: "{{ backend_lib_directory }}/sausage-store-{{ backend_maven_version }}.jar"
+#    repository_url: "https://nexus.praktikum-services.ru/repository/sausage-store-shubin-ivan-backend"
+#    group_id: "com.yandex.practicum.devops"
+#    artifact_id: "sausage-store"
+#    version: "{{ backend_maven_version }}"
+#    owner: "{{ backend_user }}"
+#    username: "{{ nexus_user }}"
+#    password: "{{ nexus_pass }}"
+#  become: false
+
+- name: Используем модуль get_url, он скачает пакет приложения с Nexus не хуже maven_artifact
+  ansible.builtin.get_url:
+    dest: "{{ backend_lib_directory }}/sausage-store-{{ backend_maven_version }}.jar"
+    url: "{{ nexus_repo }}/sausage-store-shubin-ivan-backend/com/yandex/practicum/devops/sausage-store/{{ backend_maven_version }}/sausage-store-{{ backend_maven_version }}.jar"
+    owner: "{{ backend_user }}"
+    group: "{{ backend_user }}"
+    username: "{{ nexus_user }}"
+    password: "{{ nexus_pass }}"
+
+- name: Устанавливаем Java
+  ansible.builtin.apt:
+    name: "{{ java_apt_package }}"
+    state: present
+    update_cache: yes
+
+- name: Шаблонизация конфига управляет настройками приложения с помощью переменных
+  ansible.builtin.template:
+    src: sausage-store-backend.service.j2
+    dest: /etc/systemd/system/sausage-store-backend.service
+
+- name: Перечитываем конфигурацию systemd
+  ansible.builtin.systemd:
+    daemon_reload: yes
+
+- name: всё готово - запускаем!
+  ansible.builtin.service:
+    name: sausage-store-backend
+    state: started
+    enabled: yes

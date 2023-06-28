@@ -1,0 +1,8 @@
+all: # Все серверы в нашем inventory, all - обязателен
+  children:
+    backend: # Группа хостов с именем backend
+      hosts:
+        "{{ instance_ip_address }}":
+    frontend: # Группа хостов с именем frontend
+      hosts:
+        "{{ instance_ip_address }}":

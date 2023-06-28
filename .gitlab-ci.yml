@@ -1,0 +1,70 @@
+stages:
+  - build
+  - deploy
+
+deploy-helm:
+  stage: build
+  image:
+    name: alpine/helm:latest
+    entrypoint: ['']
+  script:
+    - helm package sausage-store-chart
+    - curl -u ${NEXUS_USER}:${NEXUS_PASS} ${NEXUS_REPO} --upload-file sausage-store-*.tgz
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "pipeline"
+      when: never
+    - changes:
+      - sausage-store-chart/**/*
+
+
+deploy-backend:
+  stage: deploy
+  image:
+    name: argoproj/argocd:v2.3.3
+    entrypoint: ['']
+  script:
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app set sausage-store-shubin-ivan -p backend.tag=${DOCKER_TAG}
+    - sleep 10
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app sync sausage-store-shubin-ivan
+  environment:
+    name: deploy-backend
+    url: https://shubin-ivan-12.k8s.praktikum-services.tech/
+  rules:
+    - if: '$SAUSAGE == "backend"'
+      when: always
+    - when: never
+
+deploy-frontend:
+  stage: deploy
+  image:
+    name: argoproj/argocd:v2.3.3
+    entrypoint: ['']
+  script:
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app set sausage-store-shubin-ivan -p frontend.tag=${DOCKER_TAG}
+    - sleep 10
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app sync sausage-store-shubin-ivan
+  environment:
+    name: deploy-frontend
+    url: https://shubin-ivan-12.k8s.praktikum-services.tech/
+  rules:
+    - if: '$SAUSAGE == "frontend"'
+      when: always
+    - when: never
+
+deploy-backend-report:
+  stage: deploy
+  image:
+    name: argoproj/argocd:v2.3.3
+    entrypoint: ['']
+  script:
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app set sausage-store-shubin-ivan -p backend-report.tag=${DOCKER_TAG}
+    - sleep 10
+    - argocd --grpc-web --auth-token $ARGO_TOKEN --server $ARGO_SERVER app sync sausage-store-shubin-ivan
+  environment:
+    name: deploy-backend-report
+    url: https://shubin-ivan-12.k8s.praktikum-services.tech/
+  rules:
+    - if: '$SAUSAGE == "backend-report"'
+      when: always
+    - when: never
+
